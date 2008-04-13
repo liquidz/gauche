@@ -20,4 +20,19 @@
 	 ]
 	))
 
+
+; =counter
+; --------------------------------------------------
+(define (counter)
+  (let1 count 0
+    (lambda ()
+      (let1 return count
+        (set! count (+ count 1))
+        return
+        )
+      )
+    )
+  )
+
+
 (provide "mi/util")
