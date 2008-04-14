@@ -1,7 +1,7 @@
-(define-module mi.abrev
+(define-module mi.abbrev
   (use srfi-1)
   (export-all))
-(select-module mi.abrev)
+(select-module mi.abbrev)
 
 (define r reverse)
 (define uniq delete-duplicates)

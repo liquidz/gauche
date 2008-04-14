@@ -23,13 +23,15 @@
 ; make a list which has each line of a file
 ; --------------------------------------------------
 (define (file->list path)
-  (let1 ls '()
-		(read-file
-		  path (lambda (line count)
-				 (push! ls line)
-				 ))
-		(reverse ls)
-		)
+  (with-input-from-file
+	path (lambda ()
+		   (reverse
+			 (port-fold (lambda (line ls)
+						  (cons line ls)
+						  ) '() read-line)
+					)
+		   )
+	)
   )
 
 (provide "mi/shell")
