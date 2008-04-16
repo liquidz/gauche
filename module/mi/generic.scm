@@ -38,5 +38,29 @@
   (exact->inexact target)
   )
 
+; =to-s
+; -------------------------------------------------------
+(define-method to-s ((target <list>))
+  (list->string target)
+  )
+(define-method to-s (target)
+  #`",target"
+  )
+
+; ===
+; --------------------------------------------------------
+(define-method == ((a <integer>) (b <integer>))
+  (= a b))
+(define-method == ((a <rational>) (b <rational>))
+  (= a b))
+(define-method == ((a <real>) (b <real>))
+  (= a b))
+(define-method == ((a <list>) (b <list>))
+  (equal? a b))
+(define-method == ((a <string>) (b <string>))
+  (string=? a b))
+(define-method == ((a <boolean>) (b <boolean>))
+  (eq? a b))
+
 
 (provide "mi/generic")

@@ -15,6 +15,11 @@
            ))
   )
 
+(define (read-s-file path)
+  (with-input-from-file
+	path (lambda () (read)))
+  )
+
 ; =file->list
 ; make a list which has each line of a file
 ; --------------------------------------------------
