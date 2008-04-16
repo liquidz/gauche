@@ -17,7 +17,11 @@
 
 (define (read-s-file path)
   (with-input-from-file
-	path (lambda () (read)))
+	path (lambda ()
+		   (reverse (port-fold (lambda (s res)
+								 (cons s res)
+								 ) '() read))
+		   ))
   )
 
 ; =file->list
@@ -25,14 +29,14 @@
 ; --------------------------------------------------
 (define (file->list path)
   (with-input-from-file
-    path (lambda ()
-           (reverse
-             (port-fold (lambda (line ls)
-                          (cons line ls)
-                          ) '() read-line)
-             )
-           )
-    )
+	path (lambda ()
+		   (reverse
+			 (port-fold (lambda (line ls)
+						  (cons line ls)
+						  ) '() read-line)
+			 )
+		   )
+	)
   )
 
 (provide "mi/file")
