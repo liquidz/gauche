@@ -10,7 +10,7 @@
     (let ((server (if port #`",hostname:,port" #`",hostname"))
           (request (if query #`",path?,query" #`",path")))
       (receive (status header body) (http-get server request)
-        (ces-convert body "*JP")
+        (values (ces-convert body "*JP") server request)
         )
       )
     )
