@@ -1,5 +1,5 @@
-(define-module mi.hiragana (export number->hiragana))
-(select-module mi.hiragana)
+(define-module mudalgorithm.hiragana (export number->hiragana))
+(select-module mudalgorithm.hiragana)
 
 ; 桁の宣言
 (define digit-class '("じゅう" ("ひゃく" "びゃく") ("せん" "ぜん") "まん"))
@@ -56,5 +56,5 @@
     )
   )
 
-(provide "mi/hiragana")
+(provide "mudalgorithm/hiragana")
 
