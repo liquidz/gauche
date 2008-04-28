@@ -9,7 +9,7 @@
 (define digits
   `(
     (#\1 "いち") (#\2 "に") (,special-digit "さん") (#\4 "よん")
-    (#\5 "ご") (#\6 "ろく") (#\7 "なな") (#\8 "はち") (#\9 "きゅう") (#\0 "")
+    (#\5 "ご") (#\6 "ろく" "ろっ") (#\7 "なな") (#\8 "はち" "はっ") (#\9 "きゅう") (#\0 "")
     ))
 ; 数えない数字の定義
 (define no-count #\0)
@@ -49,7 +49,7 @@
 ; @numに対応するひらがなを作り返す
 ; ---------------------------------------------------------------------------
 (define (number->hiragana num)
-  (let1 hiragana-list (reverse (map number-char->hiragana (string->list (number->string num))))
+  (let1 hiragana-list (reverse (map number-char->hiragana (string->list (if (string? num) num (number->string num)))))
     (let loop((ls (cdr hiragana-list)) (index 0) (result (car hiragana-list)))
       (if (null? ls)
         result
