@@ -9,8 +9,10 @@
 (define digits
   `(
     (#\1 "いち") (#\2 "に") (,special-digit "さん") (#\4 "よん")
-    (#\5 "ご") (#\6 "ろく") (#\7 "なな") (#\8 "はち") (#\9 "きゅう")
+    (#\5 "ご") (#\6 "ろく") (#\7 "なな") (#\8 "はち") (#\9 "きゅう") (#\0 "")
     ))
+; 数えない数字の定義
+(define no-count #\0)
 ; 最初の数字は桁を付けないため、対応するひらがなを宣言しておく
 (define first-digit (cadar digits))
 ; 特殊な桁の読み方をする数字に対応するひらながの宣言
@@ -21,10 +23,13 @@
 ; なお@num-hiraganaが特殊な桁の読み方をする場合は、特殊な読み方を返す
 ; ---------------------------------------------------------------------------
 (define (get-digit-class num-hiragana index)
-  (let1 dclass (list-ref digit-class index)
-    (if (pair? dclass)
-      (if (string=? num-hiragana special-hiragana) (cadr dclass) (car dclass))
-      dclass
+  (if (string=? num-hiragana "")
+    ""
+    (let1 dclass (list-ref digit-class index)
+      (if (pair? dclass)
+        (if (string=? num-hiragana special-hiragana) (cadr dclass) (car dclass))
+        dclass
+        )
       )
     )
   )
@@ -33,10 +38,11 @@
 ; １文字の@num-charに対応するひらがなでの読み方を返す
 ; ---------------------------------------------------------------------------
 (define (number-char->hiragana num-char)
-  (cadr (find (lambda (x)
-                (char=? num-char (car x))
-                ) digits)
-        )
+  (let1 res (find (lambda (x)
+                    (char=? num-char (car x))
+                    ) digits)
+    (if (null? res) "" (cadr res))
+    )
   )
 
 ; =number->hiragana
