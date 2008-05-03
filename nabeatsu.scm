@@ -1,6 +1,7 @@
 (use srfi-1)
 (use srfi-13)
-(use mudalgorithm.hiragana)
+;(use mudalgorithm.hiragana)
+(use mudalgorithm.muddy-hiragana)
 
 (define (３の倍数 x) (= 0 (modulo x 3)))
 (define (３のつく数字 x) (string-scan (number->string x) "3"))
@@ -36,9 +37,11 @@
   )
 
 (define (main args)
+  (time
   (print
-    (世界のナベアツ 1 :から 99999 :まで数えて
+    (世界のナベアツ 1 :から 1000000 :まで数えて
                     `(,３の倍数 :と ,３のつく数字 :の時だけ ,アホ) :になります。)
 ;                    `(,８の倍数 :の時だけ ,気持ちよく) :なります。)
     )
+  )
   )
