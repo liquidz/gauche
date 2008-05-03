@@ -2,7 +2,7 @@
 (select-module mudalgorithm.hiragana)
 
 ; 桁の宣言
-(define digit-class '("じゅう" ("ひゃく" "びゃく" "ぴゃく") ("せん" "ぜん") "まん"))
+(define digit-class '("じゅう" ("ひゃく" "びゃく" "ぴゃく") ("せん" "ぜん" "せん") "まん"))
 ; 特殊な桁の読み方をする数字（３）の宣言
 (define special-digit #\3)
 ; 数字とひらがなの対応表
@@ -18,6 +18,7 @@
 ; 特殊な桁の読み方をする数字に対応するひらながの宣言
 (define special-hiragana (cadr (find (lambda (x) (char=? special-digit (car x))) digits)))
 (define special-hiragana2 (caddr (find (lambda (x) (char=? #\6 (car x))) digits)))
+(define special-hiragana3 (caddr (find (lambda (x) (char=? #\8 (car x))) digits)))
 
 ; =get-digit-class
 ; @indexから桁に対応するひらがなを返す。
@@ -30,7 +31,9 @@
       (if (pair? dclass)
         (cond
           [(string=? num-hiragana special-hiragana) (cadr dclass)]
-          [(string=? num-hiragana special-hiragana2) (caddr dclass)]
+          [(or (string=? num-hiragana special-hiragana2)
+             (string=? num-hiragana special-hiragana3))
+           (caddr dclass)]
           [else (car dclass)]
           )
         dclass
