@@ -77,7 +77,9 @@
 (define (twitter-update twitter-obj status)
   (if (< (string-length status) (ref twitter-obj 'status-max))
     (let1 uri #`",(ref twitter-obj 'update)?status=,(my-conv status)"
-      (open-uri uri :method 'post :user/pass (ref twitter-obj 'user/pass))
+      (to-sxml
+        (open-uri uri :method 'post :user/pass (ref twitter-obj 'user/pass))
+        )
       )
     )
   )
