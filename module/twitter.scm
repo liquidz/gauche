@@ -9,6 +9,7 @@
   (export
     with-twitter twitter-update
     twitter-friend-timeline twitter-user-timeline
+    twitter-public-timeline
     )
   )
 (select-module twitter)
@@ -18,14 +19,25 @@
 ;; ユーザー名、パスワード、リクエスト先のURIなどを扱う。
 ;; ---------------------------------------------------------
 (define-class <twitter> ()
-  ((user :init-keyword :user)
-   (password :init-keyword :password)
+  ((user :init-keyword :user :init-value "")
+   (password :init-keyword :password :init-value "")
    (formats :init-keyword :formats :init-value "xml")
    (base-uri :init-value "http://twitter.com/")
-   (update :init-value "statuses/update.")
+   (public-timeline :init-value "statuses/public_timeline.")
    (friend-timeline :init-value "statuses/friends_timeline.")
    (user-timeline :init-value "statuses/user_timeline.")
+   ;(show :init-value "statuses/show/[[id]].")
+   (update :init-value "statuses/update.")
+   ;(replies :init-value "")
+   ;(destroy :init-value "")
+   ;(friends :init-value "")
+   ;(followers :init-value "")
+   ;(featured :init-value "")
+   ;(user-show :init-value "")
+   ;(direct-messages :init-value "")
+   ;(direct-message-sent :init-value "")
    (status-max :init-value 160)
+   (is-xml :init-value #t)
    (user/pass)
    )
   )
@@ -39,24 +51,36 @@
   (let ((user (ref self 'user)) (password (ref self 'password))
         (base (ref self 'base-uri)) (formats (ref self 'formats)))
     (set! (ref self 'user/pass) #`",|user|:,password")
+    (set! (ref self 'is-xml) (if (string=? formats "xml") #t #f))
     (for-each
       (lambda (tag)
         (set! (ref self tag) #`",base,(ref self tag),formats")
-        ) '(update friend-timeline user-timeline))
+        ) '(public-timeline update friend-timeline user-timeline))
     )
   )
 
-;; =my-conv
-;; @strをURIエンコード＆UTF-8変換して返す
+;; privates
+(define (my-conv str) (ces-convert (uri-encode-string str) "*JP"))
+(define (to-sxml str) (ssax:xml->sxml (open-input-string str) '()))
+
+;; =twitter?
+;; @objがTwitterオブジェクトかどうかを返す
 ;; ---------------------------------------------------------
-(define (my-conv str)
-  (ces-convert (uri-encode-string str) "*JP")
+(define (twitter? obj)
+  (eq? (class-of obj) <twitter>)
   )
-;; =to-sxml
-;; @strをSXMLに変換して返す
+
+;; =twitter-public-timeline
+;; パブリックタイムラインを返す
+;; @argがTwitterオブジェクトならそのフォーマットで結果を返し、
+;; ちがったら@argsをフォーマットとして結果を返す
 ;; ---------------------------------------------------------
-(define (to-sxml str)
-  (ssax:xml->sxml (open-input-string str) '())
+(define (twitter-public-timeline arg)
+  (let1 obj (if (twitter? arg) arg (make <twitter> :formats arg))
+    (let1 res (open-uri (ref obj 'public-timeline))
+      (if (ref obj 'is-xml) (to-sxml res) res)
+      )
+    )
   )
 
 ;; =with-twitter
@@ -77,8 +101,8 @@
 (define (twitter-update twitter-obj status)
   (if (< (string-length status) (ref twitter-obj 'status-max))
     (let1 uri #`",(ref twitter-obj 'update)?status=,(my-conv status)"
-      (to-sxml
-        (open-uri uri :method 'post :user/pass (ref twitter-obj 'user/pass))
+      (let1 res (open-uri uri :method 'post :user/pass (ref twitter-obj 'user/pass))
+        (if (ref twitter-obj 'is-xml) (to-sxml res) res)
         )
       )
     )
@@ -89,9 +113,9 @@
 ;; フレンドのタイムラインを取得し、SXMLとして結果を返す
 ;; ---------------------------------------------------------
 (define (twitter-friend-timeline twitter-obj)
-  (to-sxml
-    (open-uri (ref twitter-obj 'friend-timeline)
-              :user/pass (ref twitter-obj 'user/pass))
+  (let1 res (open-uri (ref twitter-obj 'friend-timeline)
+                      :user/pass (ref twitter-obj 'user/pass))
+    (if (ref twitter-obj 'is-xml) (to-sxml res) res)
     )
   )
 
@@ -100,9 +124,9 @@
 ;; 自分のタイムラインを取得し、SXMLとしｔ結果を返す
 ;; ---------------------------------------------------------
 (define (twitter-user-timeline twitter-obj)
-  (to-sxml
-    (open-uri (ref twitter-obj 'user-timeline)
-              :user/pass (ref twitter-obj 'user/pass))
+  (let1 res (open-uri (ref twitter-obj 'user-timeline)
+                      :user/pass (ref twitter-obj 'user/pass))
+    (if (ref twitter-obj 'is-xml) (to-sxml res) res)
     )
   )
 
