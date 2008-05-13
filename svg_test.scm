@@ -6,6 +6,7 @@
 
 (use gauche.interactive)
 
+#|
 (define-class <svg> ()
   ((sxml :init-value '())
    (width :init-keyword :width :init-value 100)
@@ -66,18 +67,45 @@
                     )))
     )
   )
+|#
 
+(define-class <svg-args> ()
+  ((x :init-keyword :x :init-value '())
+   (y :init-keyword :y :init-value '())
+   (x1 :init-keyword :x1 :init-value '())
+   (x2 :init-keyword :x2 :init-value '())
+   (y1 :init-keyword :y1 :init-value '())
+   (y2 :init-keyword :y2 :init-value '())
+   (width :init-keyword :width :init-value '())
+   (height :init-keyword :height :init-value '())
+   (cx :init-keyword :cx :init-value '())
+   (cy :init-keyword :cy :init-value '())
+   (r :init-keyword :r :init-value '())
+   (rx :init-keyword :rx :init-value '())
+   (ry :init-keyword :ry :init-value '())
+   (fill :init-keyword :fill :init-value '())
+   (stroke :init-keyword :stroke :init-value '())
+   (stroke-width :init-keyword :stroke-width :init-value '())
+   (points :init-keyword :points :init-value '())
+   (font-size :init-keyword :font-size :init-value '())
+   (font-family :init-keyword :font-family :init-value '())
+   )
+  )
+(define-method write-object ((arg <svg-args>) port)
+  (write
+    (fold (lambda (x res)
+            (let* ((key (ref x 0)) (value (ref arg key)))
+              (if (null? value) res (append res `((,key ,value))))
+              )
+            ) '(@) (class-slots <svg-args>))
+    port)
+  )
 
-(define-method svg:rect! ((obj <svg>) . args)
-  (let-keywords args ((x 0) (y 0) (width 10) (height 10)
-                            (fill "white")
-                            (stroke "black")
-                            . others
-                            )
-    (let1 rect-sxml `(rect (@ (x ,x) (y ,y) (width ,width) (height ,height)
-                              (fill ,fill) (stroke ,stroke)))
-      (svg:add-element! obj rect-sxml)
-      )
+(define-syntax svg:
+  (syntax-rules ()
+    [(svg: tag args ...)
+     `(tag ,(make <svg-args> args ...))
+     ]
     )
   )
 
@@ -88,7 +116,8 @@
   )
 
 (define (main args)
-  (with-svg-canvas
+  (print (svg: rect :x 10 :y 20 :width 50 :height 30))
+  #;(with-svg-canvas
     (lambda (c)
       (print "\nadd-element = " (svg:add-element c '(rect hello)) "\n")
 
