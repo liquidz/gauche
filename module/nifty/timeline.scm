@@ -12,6 +12,14 @@
 (define *timeline-server* "api.timeline.nifty.com")
 (define *timeline-request* "/api/v1/articles/create")
 
+(define (uri-utf8-encode str)
+  (let1 ces (ces-guess-from-string str "*jp")
+    (if (eq? ces 'utf-8) str
+      (uri-encode-string (ces-convert str "*jp"))
+      )
+    )
+  )
+
 (define (today)
   (let1 now (current-date)
     (let ((year (ref now 'year)) (month (ref now 'month)) (day (ref now 'day)))
@@ -23,8 +31,8 @@
 (define (make-post-data args)
   (let-keywords args ((timeline-key "") (timeline-id "") (title "tmp") (description "tmp") (start-time (today)) (end-time (today)) (grade 0) (link ""))
     (if (or (string=? timeline-key "") (string=? timeline-id "")) ""
-      (let ((u-title (uri-encode-string (ces-convert title "*JP")))
-            (u-description (uri-encode-string (ces-convert description "*JP")))
+      (let ((u-title (uri-utf8-encode title ))
+            (u-description (uri-utf8-encode description))
             (u-link (uri-encode-string link)))
         (string-append #`"timeline_key=,|timeline-key|&timeline_id=,|timeline-id|&title=,|u-title|&description=,|u-description|&start_time=,|start-time|&end_time=,|end-time|&grade=,|grade|" (if (string=? u-link "") "" #`"&link=,|u-link|"))
         )
@@ -38,7 +46,6 @@
       (values #f "invalid parameters")
       (receive (status header body) (http-post *timeline-server* *timeline-request* post-data)
         (let1 sxml (ssax:xml->sxml (open-input-string body) '())
-          (print post-data)
           (if (string=? (cadar ((sxpath '(response status code)) sxml)) "200")
             (values #t "ok")
             (values #f (cadar ((sxpath '(response status message)) sxml)))
