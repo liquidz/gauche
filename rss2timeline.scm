@@ -38,6 +38,43 @@
   )
 
 (define (main args)
+  (with-timeline
+    (lambda (timeline-obj)
+      (receive (status header body) (http-get "172.19.45.30:4000" "/rdf")
+        (let1 sxml (ssax:xml->sxml (open-input-string body) '())
+          (for-each
+            (lambda (item)
+              (receive (title link description date author) (parse-rss-item item)
+                (let1 grade (get-day-count date)
+                  (cond
+                    [(timeline-duplicated? timeline-obj :title title :date date)
+                     (print "already added " title)
+                     ]
+                    [else
+                      (print "adding " title "...")
+                      (receive (result message) (post-to-timeline
+                                                  timeline-obj :title title
+                                                  :description (string-append author "\n\n" description)
+                                                  :start-time date :end-time date
+                                                  :link link :grade (* grade 5))
+                        (if (not result) (print (ces-convert message "*jp")))
+                        )
+                      ]
+                    )
+                  )
+                )
+              )
+            ((sxpath '(rss channel item)) sxml))
+          )
+        )
+      )
+    :timeline-key "d4f63c78f27acb3cfdd9f225771a2e61"
+    :timeline-id "7159"
+    )
+  )
+
+#|
+(define (main args)
   (receive (status header body) (http-get "172.19.45.30:4000" "/rdf")
     (let1 sxml (ssax:xml->sxml (open-input-string body) '())
 
@@ -70,4 +107,4 @@
       )
     )
   )
-
+|#
