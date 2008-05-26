@@ -5,16 +5,35 @@
   (use sxml.ssax)
   (use sxml.sxpath)
   (use srfi-19)
-  (export post-to-timeline timeline-duplicated?)
+  (export with-timeline post-to-timeline timeline-duplicated?)
   )
 (select-module nifty.timeline)
 
-#|
-(define *timeline-server* "api.timeline.nifty.com")
-(define *timeline-post-request* "/api/v1/articles/create")
-(define *timeline-search-request* "/api/v1/articles/search")
-|#
+; =uri-utf8-encode
+; private utility method to convert string
+; -----------------------------------------------------------------------
+(define (uri-utf8-encode str)
+  (let1 ces (ces-guess-from-string str "*jp")
+    (if (eq? ces 'utf-8) str
+      (uri-encode-string (ces-convert str "*jp"))
+      )
+    )
+  )
 
+; =today
+; private utility method to get today's date string
+; -----------------------------------------------------------------------
+(define (today)
+  (let1 now (current-date)
+    (let ((year (ref now 'year)) (month (ref now 'month)) (day (ref now 'day)))
+      #`",|year|-,|month|-,|day|"
+      )
+    )
+  )
+
+; =with-timeline
+; public method to use this module
+; -----------------------------------------------------------------------
 (define (with-timeline fn . args)
   (let-keywords args ((timeline-key "") (timeline-id ""))
     (let1 timeline-obj (make <timeline> :timeline-key timeline-key :timeline-id timeline-id)
@@ -23,19 +42,25 @@
     )
   )
 
+; =timeline
+; basic class for this module
+; -----------------------------------------------------------------------
 (define-class <timeline> ()
-  ((timeline-key :init-keyword :timeline-key :init-value "" :getter :get-timeline-key)
-   (timeline-id :init-keyword :timeline-id :init-value "" :getter :get-timeline-id)
-   (*server* "api.timeline.nifty.com" :allocation :class :getter :get-server)
-   (*post-request* "/api/v1/articles/create" :allocation :class :getter :get-post-request)
-   (*search-request* "/api/v1/articles/search" :allocation :class :getter :get-search-request)
+  ((timeline-key :init-keyword :timeline-key :init-value "" :getter get-timeline-key)
+   (timeline-id :init-keyword :timeline-id :init-value "" :getter get-timeline-id)
+   (*server* :init-value "api.timeline.nifty.com" :allocation :class :getter get-server)
+   (*post-request* :init-value "/api/v1/articles/create" :allocation :class :getter get-post-request)
+   (*search-request* :init-value "/api/v1/articles/search" :allocation :class :getter get-search-request)
    )
   )
 
+; =make-post-data
+; private utility method to make post data string
+; -----------------------------------------------------------------------
 (define-method make-post-data ((obj <timeline>) args)
-  (let-keywords args ((titme "tmp") (description "tmp") (start-time (today))
-                                    (end-time (today)) (grande 0) (link ""))
-    (if (or (string=? (get-timeline-key obj) "") (string=? (get-timeline-id obj))) ""
+  (let-keywords args ((title "tmp") (description "tmp") (start-time (today))
+                                    (end-time (today)) (grade 0) (link ""))
+    (if (or (string=? (get-timeline-key obj) "") (string=? (get-timeline-id obj) "")) ""
       (let ((key (get-timeline-key obj))
             (id (get-timeline-id obj))
             (u-title (uri-utf8-encode title ))
@@ -47,46 +72,19 @@
     )
   )
 
+; =make-search-data
+; private utility method to make search data string
+; -----------------------------------------------------------------------
 (define-method make-search-data ((obj <timeline>) date)
   (let ((key (get-timeline-key obj)) (id (get-timeline-id obj)))
     #`"timeline_key=,|key|&timeline_id=,|id|&start_time=,|date|&end_time=,|date|"
     )
   )
 
-(define (uri-utf8-encode str)
-  (let1 ces (ces-guess-from-string str "*jp")
-    (if (eq? ces 'utf-8) str
-      (uri-encode-string (ces-convert str "*jp"))
-      )
-    )
-  )
 
-(define (today)
-  (let1 now (current-date)
-    (let ((year (ref now 'year)) (month (ref now 'month)) (day (ref now 'day)))
-      #`",|year|-,|month|-,|day|"
-      )
-    )
-  )
-
-#|
-(define (make-post-data args)
-  (let-keywords args ((timeline-key "") (timeline-id "") (title "tmp") (description "tmp") (start-time (today)) (end-time (today)) (grade 0) (link ""))
-    (if (or (string=? timeline-key "") (string=? timeline-id "")) ""
-      (let ((u-title (uri-utf8-encode title ))
-            (u-description (uri-utf8-encode description))
-            (u-link (uri-encode-string link)))
-        (string-append #`"timeline_key=,|timeline-key|&timeline_id=,|timeline-id|&title=,|u-title|&description=,|u-description|&start_time=,|start-time|&end_time=,|end-time|&grade=,|grade|" (if (string=? u-link "") "" #`"&link=,|u-link|"))
-        )
-      )
-    )
-  )
-
-(define (make-search-data timeline-key timeline-id date)
-  #`"timeline_key=,|timeline-key|&timeline_id=,|timeline-id|&start_time=,|date|&end_time=,|date|"
-  )
-|#
-
+; =post-to-timeline
+; public method to post article to timeline
+; -----------------------------------------------------------------------
 (define-method post-to-timeline ((obj <timeline>) . args)
   (let ((post-data (make-post-data obj args))
         (server (get-server obj))
@@ -94,22 +92,6 @@
     (if (string=? post-data "")
       (values #f "invalid parameters")
       (receive (status header body) (http-post server post-request post-data)
-        (let1 sxml (ssax:xml->sxml (open-input-string body) '())
-          (if (string=? (cadar ((sxpath '(response status code)))) "200")
-            (values #t "ok")
-            (values #f (cadar ((sxpath '(response status message)) sxml)))
-            )
-          )
-        )
-      )
-    )
-  )
-#|
-(define (post-to-timeline . args)
-  (let1 post-data (make-post-data args)
-    (if (string=? post-data "")
-      (values #f "invalid parameters")
-      (receive (status header body) (http-post *timeline-server* *timeline-post-request* post-data)
         (let1 sxml (ssax:xml->sxml (open-input-string body) '())
           (if (string=? (cadar ((sxpath '(response status code)) sxml)) "200")
             (values #t "ok")
@@ -120,11 +102,13 @@
       )
     )
   )
-|#
 
+; =timeline-duplicated?
+; public method to check a timeline article duplicated or not
+; -----------------------------------------------------------------------
 (define-method timeline-duplicated? ((obj <timeline>) . args)
   (let-keywords args ((title "") (date ""))
-    (let ((search-data (make-search-data obj data)) (server (get-server obj)) (search-request (get-search-request obj)))
+    (let ((search-data (make-search-data obj date)) (server (get-server obj)) (search-request (get-search-request obj)))
       (receive (status header body) (http-post server search-request search-data)
         (let1 sxml (ssax:xml->sxml (open-input-string body) '())
           (call/cc (lambda (cc)
@@ -134,37 +118,13 @@
                                  (cc #t) #f
                                  )
                                )
-                             ) #f ((sxpath '(response result articles artile)) sxml))
+                             ) #f ((sxpath '(response result articles article)) sxml))
                      ))
           )
         )
       )
     )
   )
-
-#|
-(define (timeline-duplicated? . args)
-  (let-keywords args ((timeline-key "")
-                      (timeline-id "")
-                      (title "") (date ""))
-    (let1 search-data (make-search-data timeline-key timeline-id date)
-      (receive (status header body) (http-post *timeline-server* *timeline-search-request* search-data)
-        (let1 sxml (ssax:xml->sxml (open-input-string body) '())
-          (fold (lambda (article result)
-                  (if result result
-                    (let1 rss-title ((sxpath '(title)) article)
-                      (if (and (> (length (car title)) 1) (string=? (cadar rss-title) title))
-                        #t #f
-                        )
-                      )
-                    )
-                  ) #f ((sxpath '(response result articles article)) sxml))
-          )
-        )
-      )
-    )
-  )
-|#
 
 (provide "nifty/timeline")
 
