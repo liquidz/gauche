@@ -45,20 +45,22 @@
         (lambda (item)
           (receive (title link description date author) (parse-rss-item item)
             (let1 grade (get-day-count date)
-              (print "adding " title "....")
-              (receive (result message)
-                (post-to-timeline :timeline-key "d4f63c78f27acb3cfdd9f225771a2e61"
-                                  :timeline-id "7159"
-                                  :title title
-                                  :description (string-append author "\n\n" description)
-                                  :start-time date
-                                  :end-time date
-                                  :link link
-                                  :grade (* grade 5)
-                                  )
-                (if result
-                  (sys-sleep 1)
-                  (print (ces-convert message "*jp"))
+              (if (timeline-duplicated? :timeline-key "d4f63c78f27acb3cfdd9f225771a2e61" :timeline-id "7159" :title title :date date)
+                (print "already added " title)
+                (begin
+                  (print "adding " title "....")
+                  (receive (result message)
+                    (post-to-timeline :timeline-key "d4f63c78f27acb3cfdd9f225771a2e61"
+                                      :timeline-id "7159"
+                                      :title title
+                                      :description (string-append author "\n\n" description)
+                                      :start-time date
+                                      :end-time date
+                                      :link link
+                                      :grade (* grade 5)
+                                      )
+                    (if (not result) (print (ces-convert message "*jp")))
+                    )
                   )
                 )
               )
