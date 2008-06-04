@@ -9,5 +9,12 @@
     )
   )
 
+; =n-class-integer
+; -------------------------------------------
+(define (n-class-integer n i)
+  (let1 c ","
+    (format #f #`"~,|n|,|c|'0d" i)
+    )
+  )
 
 (provide "mi/string")
