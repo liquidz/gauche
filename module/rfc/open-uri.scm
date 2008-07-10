@@ -34,8 +34,16 @@
     )
   )
 
+(define-method http-get ((uri <string>))
+  (http-get (new-uri uri))
+  )
+
 (define-method http-post ((self <uri>) post-data)
   (receive (status header body) (http-post (ref self 'server) (ref self 'request) post-data)
     (values status header body)
     )
+  )
+
+(define-method http-post ((uri <string>))
+  (http-post (new-uri uri))
   )
